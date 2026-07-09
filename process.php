@@ -40,13 +40,15 @@ foreach($values as $value) {
 if(!empty($old['Password']) && !empty($old['CPassword']) && $old['Password'] !== $old['CPassword']) {
     $errors['CPassword'] = '* Passwords do not match';
 }
-if(empty($errors)) {
+if(!empty($errors)) {
     $img=uploadImg($_FILES['Image'], $allowedExtensions);
     if(str_starts_with($img, '*')) {
         $errors['Image'] = $img;
     }else {
         $old['Image'] = $img;
     }
+}else{
+    $errors['image'] = "* Image is required";
 }
 $_SESSION['old'] = $old;
 if(!empty($errors)) {
