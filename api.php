@@ -11,4 +11,6 @@ echo json_encode([
     'errors' => $_SESSION['errors'] ?? [],
 ]);
 
+unset($_SESSION['errors']);
+
 exit;

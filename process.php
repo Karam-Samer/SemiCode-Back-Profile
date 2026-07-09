@@ -3,63 +3,50 @@
 session_start();
 
 if($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    die('Post method required');
+    die('Method is not allowed');
 }
 
-$errors = [];
-$old = [];
-$values = ['Name', 'Email', 'Language', 'Password', 'CPassword'];
+require_once 'variable.php';
+require_once 'function.php';
+
+
 
 // Get
 $id = $_GET['id'] ?? null;
 $old['id'] = $id;
 if(empty($id)) {
     $errors['id'] = '* ID is required';
+    
 }
 
 // Post
 
 foreach($values as $value) {
+
     $old[$value] = $_POST[$value] ?? null;
-    if(empty($old[$value])) {
+
+    if(isInputEmpty($old[$value])) {
         $errors[$value] = "* $value is required";
+    }else {
+        $result = isValidInputs([$value => $old[$value]], $regex, $regexError);
+        if($result !== true) {
+            $errors[$value] = $result;
+        }
+
     }
 }
+
 
 if(!empty($old['Password']) && !empty($old['CPassword']) && $old['Password'] !== $old['CPassword']) {
     $errors['CPassword'] = '* Passwords do not match';
-    $old['CPassword'] = '';
 }
 
-if (isset($_FILES['Image']) && $_FILES['Image']['error'] !== UPLOAD_ERR_NO_FILE) {
-    $file = $_FILES['Image'];
-    $fileName = $file['name'];
-    $originalName = pathinfo($fileName, PATHINFO_FILENAME);
-    $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-    $tmpPath = $file['tmp_name'];
-
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-
-    if (!in_array($extension, $allowedExtensions)) {
-        $errors['Image'] = "* Invalid file type. ";
-    } else {
-        $time = time();
-        $newFileName = "{$originalName}-{$time}.{$extension}";
-        $uploadDir = __DIR__ . '/uploads/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir);
-        }
-        $uploadPath = $uploadDir . "{$newFileName}";
-        if (move_uploaded_file($tmpPath, $uploadPath)) {
-            $old['Image'] = "http://localhost/EX2/backend/uploads/{$newFileName}";
-        } else {
-            $errors['Image'] = '* Failed to upload image';
-        }
-    }
-} else {
-    $errors['Image'] = '* Image is required';
+$img=uploadImg($_FILES['Image'], $allowedExtensions);
+if(str_starts_with($img, '*')) {
+    $errors['Image'] = $img;
+}else {
+    $old['Image'] = $img;
 }
-
 
 $_SESSION['old'] = $old;
 if(!empty($errors)) {
@@ -67,6 +54,7 @@ if(!empty($errors)) {
     header("Location: http://localhost:4200/");
     exit;
 }else {
+    $old['Password'] = passwordEncrypt($old['Password']);
     header("Location: http://localhost:4200/profile");
     exit;
 }
